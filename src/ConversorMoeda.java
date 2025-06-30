@@ -8,35 +8,46 @@ public class ConversorMoeda {
         Scanner input = new Scanner(System.in);
 
         System.out.print("Digite a moeda de origem (ex: USD): ");
-        String moedaOrigem = input.nextLine().toUpperCase();
+        String origem = input.nextLine().toUpperCase();
 
         System.out.print("Digite a moeda de destino (ex: BRL): ");
-        String moedaDestino = input.nextLine().toUpperCase();
+        String destino = input.nextLine().toUpperCase();
 
         System.out.print("Digite o valor a ser convertido: ");
         double valor = input.nextDouble();
 
         try {
-            String urlString = "https://api.exchangerate.host/convert?from=" + moedaOrigem + "&to=" + moedaDestino + "&amount=" + valor;
-            URL url = new URL(urlString);
+            String urlStr = "https://api.exchangerate.host/convert?from=" + origem + "&to=" + destino + "&amount=" + valor;
+            URL url = new URL(urlStr);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
 
-            HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
-            conexao.setRequestMethod("GET");
+            Scanner resp = new Scanner(conn.getInputStream());
+            StringBuilder sb = new StringBuilder();
+            while (resp.hasNext()) sb.append(resp.nextLine());
+            resp.close();
+            String json = sb.toString();
 
-            Scanner respostaScanner = new Scanner(conexao.getInputStream());
-            StringBuilder resposta = new StringBuilder();
-            while (respostaScanner.hasNext()) {
-                resposta.append(respostaScanner.nextLine());
+            // Busca simplificada do número "result":
+            double result = 0;
+            String marker = "\"result\":";
+            int idx = json.indexOf(marker);
+            if (idx != -1) {
+                int start = idx + marker.length();
+                int end = json.indexOf(",", start);
+                if (end == -1) end = json.indexOf("}", start);
+                String numStr = json.substring(start, end).trim();
+                result = Double.parseDouble(numStr);
+            } else {
+                throw new RuntimeException("Campo 'result' não encontrado na resposta JSON");
             }
-            respostaScanner.close();
 
-            JSONObject json = new JSONObject(resposta.toString());
-            double resultado = json.getDouble("result");
-
-            System.out.println("\nResultado: " + valor + " " + moedaOrigem + " = " + resultado + " " + moedaDestino);
+            System.out.printf("\nResultado: %.2f %s = %.2f %s%n", valor, origem, result, destino);
 
         } catch (Exception e) {
-            System.out.println("Erro ao consultar a API: " + e.getMessage());
+            System.out.println("Erro: " + e.getMessage());
         }
+
+        input.close();
     }
 }
