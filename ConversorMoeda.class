@@ -1,0 +1,57 @@
+// Source code is decompiled from a .class file using FernFlower decompiler.
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.util.Scanner;
+
+public class ConversorMoeda {
+   public ConversorMoeda() {
+   }
+
+   public static void main(String[] var0) {
+      Scanner var1 = new Scanner(System.in);
+      System.out.print("Digite a moeda de origem (ex: USD): ");
+      String var2 = var1.nextLine().toUpperCase();
+      System.out.print("Digite a moeda de destino (ex: BRL): ");
+      String var3 = var1.nextLine().toUpperCase();
+      System.out.print("Digite o valor a ser convertido: ");
+      double var4 = var1.nextDouble();
+
+      try {
+         String var6 = "https://api.exchangerate.host/convert?from=" + var2 + "&to=" + var3 + "&amount=" + var4;
+         URI var7 = URI.create(var6);
+         URL var8 = var7.toURL();
+         HttpURLConnection var9 = (HttpURLConnection)var8.openConnection();
+         var9.setRequestMethod("GET");
+         Scanner var10 = new Scanner(var9.getInputStream());
+         StringBuilder var11 = new StringBuilder();
+
+         while(var10.hasNext()) {
+            var11.append(var10.nextLine());
+         }
+
+         var10.close();
+         String var12 = var11.toString();
+         double var13 = 0.0;
+         String var15 = "\"result\":";
+         int var16 = var12.indexOf(var15);
+         if (var16 == -1) {
+            throw new RuntimeException("Campo 'result' não encontrado na resposta JSON");
+         }
+
+         int var17 = var16 + var15.length();
+         int var18 = var12.indexOf(",", var17);
+         if (var18 == -1) {
+            var18 = var12.indexOf("}", var17);
+         }
+
+         String var19 = var12.substring(var17, var18).trim();
+         var13 = Double.parseDouble(var19);
+         System.out.printf("\nResultado: %.2f %s = %.2f %s%n", var4, var2, var13, var3);
+      } catch (Exception var20) {
+         System.out.println("Erro: " + var20.getMessage());
+      }
+
+      var1.close();
+   }
+}
